@@ -1,10 +1,6 @@
 """
 TYPE!POW! — Single-file Flask app (API + frontend bundled)
 Deploy to Render as a single Python web service — no separate static site needed.
-
-Render note: the app sits behind Render's proxy, so request.remote_addr is the
-proxy's internal IP. The real client IP is the FIRST entry of X-Forwarded-For.
-ProxyFix makes Flask trust that header so request.remote_addr is correct.
 """
 
 import json
@@ -33,8 +29,6 @@ def client_ip() -> str:
         return fwd.split(",")[0].strip()
     return request.remote_addr or "unknown"
 
-
-# ─── API routes ──────────────────────────────────────────────────────────────
 
 @app.get("/api/health")
 def health():
@@ -77,8 +71,6 @@ def view_logs():
     ]
     return jsonify(ok=True, count=len(rows), sessions=rows[-200:])
 
-
-# ─── Frontend ────────────────────────────────────────────────────────────────
 
 HTML = """<!doctype html>
 <html lang="en">
@@ -161,22 +153,22 @@ body{font-family:"Nunito",system-ui,sans-serif;color:var(--ink);background:var(-
 .empty{text-align:center;font-style:italic;opacity:.6}
 .back-link{display:inline-block;margin-top:16px;font-weight:900;color:var(--hero);text-decoration:none}
 .back-link:hover{text-decoration:underline}
+/* tap-to-focus overlay when playing — covers whole panel so any tap refocuses */
+.focus-overlay{position:absolute;inset:0;z-index:2;cursor:text}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script>
-// All React hooks pulled from UMD global — NO import statements
-var h = React.createElement;
+var h          = React.createElement;
 var useState   = React.useState;
 var useEffect  = React.useEffect;
 var useRef     = React.useRef;
 var useMemo    = React.useMemo;
-var useCallback = React.useCallback;
 var Fragment   = React.Fragment;
 
-// ── API helpers ──────────────────────────────────────────────────────────
+// ── API ───────────────────────────────────────────────────────────────────
 async function logSession(payload) {
   try {
     var res = await fetch('/api/log', {
@@ -195,7 +187,7 @@ async function fetchLogs(user, pass) {
   } catch(e) { return { ok: false, reason: 'network_error' }; }
 }
 
-// ── SVG helpers ──────────────────────────────────────────────────────────
+// ── SVG art ───────────────────────────────────────────────────────────────
 function HalftoneBackdrop() {
   return h('svg', { className: 'backdrop', viewBox: '0 0 400 400', preserveAspectRatio: 'xMidYMid slice', 'aria-hidden': 'true' },
     h('defs', null,
@@ -212,54 +204,52 @@ function HalftoneBackdrop() {
   );
 }
 
-function Typist({ mood }) {
-  mood = mood || 'idle';
+function Typist(props) {
+  var mood = props.mood || 'idle';
   var browY = mood === 'win' ? 30 : mood === 'typing' ? 34 : 36;
   var mouth = mood === 'win'
     ? 'M78 78 Q100 102 122 78 Q100 88 78 78 Z'
     : mood === 'typing' ? 'M84 80 Q100 90 116 80'
     : 'M84 82 Q100 86 116 82';
-
-  return h('svg', { className: 'typist typist--' + mood, viewBox: '0 0 200 200', role: 'img', 'aria-label': 'Comic typist character' },
+  return h('svg', { className: 'typist typist--' + mood, viewBox: '0 0 200 200', role: 'img', 'aria-label': 'Comic typist' },
     mood === 'typing' && h('g', { className: 'speedlines', stroke: '#1a1a1a', strokeWidth: '4', strokeLinecap: 'round' },
-      h('line', { x1: '10', y1: '60',  x2: '40',  y2: '60' }),
-      h('line', { x1: '6',  y1: '100', x2: '42',  y2: '100' }),
-      h('line', { x1: '10', y1: '140', x2: '40',  y2: '140' }),
-      h('line', { x1: '160',y1: '60',  x2: '190', y2: '60' }),
-      h('line', { x1: '158',y1: '100', x2: '194', y2: '100' }),
-      h('line', { x1: '160',y1: '140', x2: '190', y2: '140' })
+      h('line', { x1:'10', y1:'60',  x2:'40',  y2:'60' }),
+      h('line', { x1:'6',  y1:'100', x2:'42',  y2:'100' }),
+      h('line', { x1:'10', y1:'140', x2:'40',  y2:'140' }),
+      h('line', { x1:'160',y1:'60',  x2:'190', y2:'60' }),
+      h('line', { x1:'158',y1:'100', x2:'194', y2:'100' }),
+      h('line', { x1:'160',y1:'140', x2:'190', y2:'140' })
     ),
-    h('circle', { cx: '100', cy: '70', r: '46', fill: '#ffe0bd', stroke: '#1a1a1a', strokeWidth: '5' }),
-    h('path', { d: 'M54 60 Q60 18 100 20 Q140 18 146 60 Q120 40 100 44 Q80 40 54 60 Z', fill: '#2b2b2b', stroke: '#1a1a1a', strokeWidth: '5', strokeLinejoin: 'round' }),
-    h('circle', { cx: '84', cy: '64', r: '6', fill: '#1a1a1a' }),
-    h('circle', { cx: '116', cy: '64', r: '6', fill: '#1a1a1a' }),
-    h('line', { x1: '74', y1: String(browY), x2: '94', y2: String(browY + 6), stroke: '#1a1a1a', strokeWidth: '4', strokeLinecap: 'round' }),
-    h('line', { x1: '126', y1: String(browY), x2: '106', y2: String(browY + 6), stroke: '#1a1a1a', strokeWidth: '4', strokeLinecap: 'round' }),
-    h('path', { d: mouth, fill: mood === 'win' ? '#e23b3b' : 'none', stroke: '#1a1a1a', strokeWidth: '4', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-    h('path', { d: 'M40 200 Q40 140 100 140 Q160 140 160 200 Z', fill: '#2d6cdf', stroke: '#1a1a1a', strokeWidth: '5' }),
-    h('rect', { x: '62', y: '168', width: '76', height: '20', rx: '6', fill: '#1a1a1a' }),
-    h('circle', { cx: '74', cy: '166', r: '9', fill: '#ffe0bd', stroke: '#1a1a1a', strokeWidth: '4', className: 'hand handL' }),
-    h('circle', { cx: '126', cy: '166', r: '9', fill: '#ffe0bd', stroke: '#1a1a1a', strokeWidth: '4', className: 'hand handR' })
+    h('circle', { cx:'100', cy:'70', r:'46', fill:'#ffe0bd', stroke:'#1a1a1a', strokeWidth:'5' }),
+    h('path', { d:'M54 60 Q60 18 100 20 Q140 18 146 60 Q120 40 100 44 Q80 40 54 60 Z', fill:'#2b2b2b', stroke:'#1a1a1a', strokeWidth:'5', strokeLinejoin:'round' }),
+    h('circle', { cx:'84', cy:'64', r:'6', fill:'#1a1a1a' }),
+    h('circle', { cx:'116', cy:'64', r:'6', fill:'#1a1a1a' }),
+    h('line', { x1:'74', y1:String(browY), x2:'94', y2:String(browY+6), stroke:'#1a1a1a', strokeWidth:'4', strokeLinecap:'round' }),
+    h('line', { x1:'126', y1:String(browY), x2:'106', y2:String(browY+6), stroke:'#1a1a1a', strokeWidth:'4', strokeLinecap:'round' }),
+    h('path', { d:mouth, fill: mood==='win' ? '#e23b3b' : 'none', stroke:'#1a1a1a', strokeWidth:'4', strokeLinecap:'round', strokeLinejoin:'round' }),
+    h('path', { d:'M40 200 Q40 140 100 140 Q160 140 160 200 Z', fill:'#2d6cdf', stroke:'#1a1a1a', strokeWidth:'5' }),
+    h('rect', { x:'62', y:'168', width:'76', height:'20', rx:'6', fill:'#1a1a1a' }),
+    h('circle', { cx:'74', cy:'166', r:'9', fill:'#ffe0bd', stroke:'#1a1a1a', strokeWidth:'4', className:'hand handL' }),
+    h('circle', { cx:'126', cy:'166', r:'9', fill:'#ffe0bd', stroke:'#1a1a1a', strokeWidth:'4', className:'hand handR' })
   );
 }
 
-function ActionBurst({ word, color }) {
-  word = word || 'POW!';
-  color = color || '#ffd23f';
+function ActionBurst(props) {
+  var word = props.word || 'POW!';
+  var color = props.color || '#ffd23f';
   var points = [];
-  var spikes = 14;
-  for (var i = 0; i < spikes * 2; i++) {
+  for (var i = 0; i < 28; i++) {
     var r = i % 2 === 0 ? 100 : 72;
-    var a = (Math.PI / spikes) * i - Math.PI / 2;
+    var a = (Math.PI / 14) * i - Math.PI / 2;
     points.push((100 + r * Math.cos(a)).toFixed(2) + ',' + (100 + r * Math.sin(a)).toFixed(2));
   }
-  return h('svg', { className: 'burst', viewBox: '0 0 200 200', 'aria-hidden': 'true' },
-    h('polygon', { points: points.join(' '), fill: color, stroke: '#1a1a1a', strokeWidth: '6', strokeLinejoin: 'round' }),
-    h('text', { x: '100', y: '100', textAnchor: 'middle', dominantBaseline: 'central', className: 'burst__word' }, word)
+  return h('svg', { className:'burst', viewBox:'0 0 200 200', 'aria-hidden':'true' },
+    h('polygon', { points:points.join(' '), fill:color, stroke:'#1a1a1a', strokeWidth:'6', strokeLinejoin:'round' }),
+    h('text', { x:'100', y:'100', textAnchor:'middle', dominantBaseline:'central', className:'burst__word' }, word)
   );
 }
 
-// ── Admin Panel ──────────────────────────────────────────────────────────
+// ── Admin Panel ───────────────────────────────────────────────────────────
 function AdminPanel() {
   var _u = useState(''), user = _u[0], setUser = _u[1];
   var _p = useState(''), pass = _p[0], setPass = _p[1];
@@ -272,58 +262,53 @@ function AdminPanel() {
     var res = await fetchLogs(user, pass);
     setLoading(false);
     if (res.ok) { setData(res); }
-    else {
-      setData(null);
-      setError(res.reason === 'unauthorized' ? 'Wrong username or password.' : "Couldn't reach the API.");
-    }
+    else { setData(null); setError(res.reason === 'unauthorized' ? 'Wrong username or password.' : "Couldn't reach the API."); }
   }
 
   function onKey(e) { if (e.key === 'Enter') load(); }
 
-  return h('main', { className: 'stage' },
+  return h('main', { className:'stage' },
     h(HalftoneBackdrop),
-    h('section', { className: 'panel panel--admin' },
-      h('h1', { className: 'title' }, 'HQ', h('span', null, ':'), ' CASE FILES'),
-      h('p', { className: 'admin-sub' }, 'Stored visitor sessions (IP + username + score).'),
-      h('div', { className: 'admin-auth' },
-        h('input', { className: 'text-input', type: 'text', placeholder: 'username', autoComplete: 'username', value: user, onChange: function(e){ setUser(e.target.value); }, onKeyDown: onKey }),
-        h('input', { className: 'text-input', type: 'password', placeholder: 'password', autoComplete: 'current-password', value: pass, onChange: function(e){ setPass(e.target.value); }, onKeyDown: onKey }),
-        h('button', { className: 'btn btn--sm', onClick: load, disabled: loading }, loading ? 'LOADING…' : 'UNLOCK')
+    h('section', { className:'panel panel--admin' },
+      h('h1', { className:'title' }, 'HQ', h('span', null, ':'), ' CASE FILES'),
+      h('p', { className:'admin-sub' }, 'Stored visitor sessions (IP + username + score).'),
+      h('div', { className:'admin-auth' },
+        h('input', { className:'text-input', type:'text', placeholder:'username', autoComplete:'username', value:user, onChange:function(e){ setUser(e.target.value); }, onKeyDown:onKey }),
+        h('input', { className:'text-input', type:'password', placeholder:'password', autoComplete:'current-password', value:pass, onChange:function(e){ setPass(e.target.value); }, onKeyDown:onKey }),
+        h('button', { className:'btn btn--sm', onClick:load, disabled:loading }, loading ? 'LOADING…' : 'UNLOCK')
       ),
-      error && h('p', { className: 'admin-error' }, error),
+      error && h('p', { className:'admin-error' }, error),
       data && h(Fragment, null,
-        h('p', { className: 'admin-count' }, data.count + ' session(s) logged'),
-        h('div', { className: 'table-wrap' },
-          h('table', { className: 'cases' },
-            h('thead', null,
-              h('tr', null,
-                h('th', null, '#'), h('th', null, 'User'), h('th', null, 'IP'),
-                h('th', null, 'WPM'), h('th', null, 'Acc'), h('th', null, 'When (UTC)')
-              )
-            ),
+        h('p', { className:'admin-count' }, data.count + ' session(s) logged'),
+        h('div', { className:'table-wrap' },
+          h('table', { className:'cases' },
+            h('thead', null, h('tr', null,
+              h('th',null,'#'), h('th',null,'User'), h('th',null,'IP'),
+              h('th',null,'WPM'), h('th',null,'Acc'), h('th',null,'When (UTC)')
+            )),
             h('tbody', null,
               data.sessions.length === 0
-                ? h('tr', null, h('td', { colSpan: '6', className: 'empty' }, 'No one has played yet.'))
+                ? h('tr', null, h('td', { colSpan:'6', className:'empty' }, 'No one has played yet.'))
                 : data.sessions.slice().reverse().map(function(s, i) {
-                    return h('tr', { key: i },
-                      h('td', null, data.sessions.length - i),
-                      h('td', { className: 'cell-user' }, s.username || 'anonymous'),
-                      h('td', { className: 'cell-ip' }, s.ip),
-                      h('td', null, s.wpm != null ? s.wpm : '—'),
-                      h('td', null, s.accuracy != null ? s.accuracy + '%' : '—'),
-                      h('td', { className: 'cell-time' }, (s.ts || '').replace('T', ' ').slice(0, 19))
+                    return h('tr', { key:i },
+                      h('td',null, data.sessions.length - i),
+                      h('td',{ className:'cell-user' }, s.username || 'anonymous'),
+                      h('td',{ className:'cell-ip' }, s.ip),
+                      h('td',null, s.wpm != null ? s.wpm : '—'),
+                      h('td',null, s.accuracy != null ? s.accuracy + '%' : '—'),
+                      h('td',{ className:'cell-time' }, (s.ts||'').replace('T',' ').slice(0,19))
                     );
                   })
             )
           )
         )
       ),
-      h('a', { className: 'back-link', href: '#' }, '← back to the game')
+      h('a', { className:'back-link', href:'#' }, '← back to the game')
     )
   );
 }
 
-// ── Game ─────────────────────────────────────────────────────────────────
+// ── Game ──────────────────────────────────────────────────────────────────
 var PROMPTS = [
   'The quick brown fox jumps over the lazy dog while the city sleeps.',
   'Heroes are made in the panels between the punches and the silence.',
@@ -331,7 +316,6 @@ var PROMPTS = [
   'Every keystroke is a tiny thunderclap echoing across the page.'
 ];
 var DURATION = 30;
-
 function pickPrompt() { return PROMPTS[Math.floor(Math.random() * PROMPTS.length)]; }
 
 function useHashRoute() {
@@ -345,22 +329,40 @@ function useHashRoute() {
 }
 
 function Game() {
-  var _s = useState('name'), step = _s[0], setStep = _s[1];
-  var _un = useState(''), username = _un[0], setUsername = _un[1];
-  var _pr = useState(pickPrompt), prompt = _pr[0], setPrompt = _pr[1];
-  var _ty = useState(''), typed = _ty[0], setTyped = _ty[1];
-  var _tl = useState(DURATION), timeLeft = _tl[0], setTimeLeft = _tl[1];
-  var _re = useState(null), result = _re[0], setResult = _re[1];
-  var inputRef = useRef(null);
-  var startRef = useRef(null);
+  var _s  = useState('name'),      step     = _s[0],  setStep     = _s[1];
+  var _un = useState(''),          username = _un[0], setUsername = _un[1];
+  var _pr = useState(pickPrompt),  prompt   = _pr[0], setPrompt   = _pr[1];
+  var _ty = useState(''),          typed    = _ty[0], setTyped    = _ty[1];
+  var _tl = useState(DURATION),    timeLeft = _tl[0], setTimeLeft = _tl[1];
+  var _re = useState(null),        result   = _re[0], setResult   = _re[1];
 
-  // countdown
+  var inputRef   = useRef(null);
+  var startRef   = useRef(null);
+  var finishedRef = useRef(false);   // ← prevents double-finish from timer + typing
+
+  // ── focus helper — works on desktop AND mobile ──────────────────────────
+  function focusInput() {
+    var el = inputRef.current;
+    if (!el) return;
+    el.removeAttribute('disabled');
+    el.focus();
+    // On iOS, focus() alone sometimes isn't enough after a re-render.
+    // A tiny rAF loop gives the DOM time to settle.
+    requestAnimationFrame(function() { el.focus(); });
+  }
+
+  // ── countdown ────────────────────────────────────────────────────────────
   useEffect(function() {
     if (step !== 'playing') return;
     if (timeLeft <= 0) { finish(); return; }
     var t = setTimeout(function() { setTimeLeft(function(s) { return s - 1; }); }, 1000);
     return function() { clearTimeout(t); };
   }, [step, timeLeft]);
+
+  // ── re-focus whenever step becomes 'playing' ────────────────────────────
+  useEffect(function() {
+    if (step === 'playing') { focusInput(); }
+  }, [step]);
 
   var correctChars = useMemo(function() {
     var n = 0;
@@ -369,126 +371,135 @@ function Game() {
   }, [typed, prompt]);
 
   function start() {
-    setTyped(''); setPrompt(pickPrompt()); setTimeLeft(DURATION); setResult(null);
-    setStep('playing');
+    finishedRef.current = false;          // reset guard
+    setTyped('');
+    setPrompt(pickPrompt());
+    setTimeLeft(DURATION);
+    setResult(null);
+    setStep('playing');                   // useEffect above will call focusInput()
     startRef.current = Date.now();
-    setTimeout(function() { if (inputRef.current) inputRef.current.focus(); }, 50);
   }
 
   function finish() {
+    if (finishedRef.current) return;      // guard: only finish once per round
+    finishedRef.current = true;
     var elapsed = Math.max(1, (Date.now() - startRef.current) / 1000);
     var wpm = Math.round((correctChars / 5 / elapsed) * 60);
     var accuracy = typed.length ? Math.round((correctChars / typed.length) * 100) : 0;
     var res = { wpm: wpm, accuracy: accuracy, duration_s: Math.round(elapsed) };
-    setResult(res); setStep('done');
+    setResult(res);
+    setStep('done');
     logSession(Object.assign({}, res, { username: username, consent: true }));
   }
 
-  var mood = step === 'playing' ? 'typing' : step === 'done' ? (result && result.wpm >= 40 ? 'win' : 'meh') : 'idle';
-  var burstWord = !result ? 'POW!' : result.wpm >= 60 ? 'KAPOW!' : result.wpm >= 40 ? 'BAM!' : 'OOF!';
+  var mood = step === 'playing' ? 'typing'
+           : step === 'done' ? (result && result.wpm >= 40 ? 'win' : 'meh')
+           : 'idle';
+  var burstWord = !result ? 'POW!'
+                : result.wpm >= 60 ? 'KAPOW!'
+                : result.wpm >= 40 ? 'BAM!' : 'OOF!';
 
   // Step 1 – name
   if (step === 'name') {
-    return h('main', { className: 'stage' },
+    return h('main', { className:'stage' },
       h(HalftoneBackdrop),
-      h('section', { className: 'panel panel--consent' },
-        h('h1', { className: 'title' }, 'TYPE', h('span', null, '!'), 'POW', h('span', null, '!')),
-        h('p', { className: 'consent-copy' }, 'Enter your hero name to step into the ring.'),
+      h('section', { className:'panel panel--consent' },
+        h('h1', { className:'title' }, 'TYPE', h('span',null,'!'), 'POW', h('span',null,'!')),
+        h('p', { className:'consent-copy' }, 'Enter your hero name to step into the ring.'),
         h('input', {
-          className: 'text-input text-input--big',
-          placeholder: 'your username',
-          value: username,
-          maxLength: 40,
-          onChange: function(e) { setUsername(e.target.value); },
-          onKeyDown: function(e) { if (e.key === 'Enter' && username.trim()) setStep('consent'); },
-          autoFocus: true
+          className:'text-input text-input--big', placeholder:'your username',
+          value:username, maxLength:40,
+          onChange:function(e){ setUsername(e.target.value); },
+          onKeyDown:function(e){ if(e.key==='Enter' && username.trim()) setStep('consent'); },
+          autoFocus:true
         }),
-        h('button', { className: 'btn', disabled: !username.trim(), onClick: function() { setStep('consent'); } }, 'ENTER THE RING')
+        h('button', { className:'btn', disabled:!username.trim(), onClick:function(){ setStep('consent'); } }, 'ENTER THE RING')
       )
     );
   }
 
   // Step 2 – consent
   if (step === 'consent') {
-    return h('main', { className: 'stage' },
+    return h('main', { className:'stage' },
       h(HalftoneBackdrop),
-      h('section', { className: 'panel panel--consent' },
-        h('h1', { className: 'title' }, 'HEADS UP', h('span', null, '!')),
-        h('p', { className: 'consent-copy' },
-          'Hey ', h('strong', null, username), '! 💥 ',
-          'Every superhero has an origin story... today yours begins with a keyboard. ',
-          'Type as fast as you can, avoid the villains called typos, ',
-          'and show the world your superhuman WPM!'
+      h('section', { className:'panel panel--consent' },
+        h('h1', { className:'title' }, 'HEADS UP', h('span',null,'!')),
+        h('p', { className:'consent-copy' },
+          'Hi ', h('strong',null,username), ' — this is a ', h('strong',null,'security demonstration'), '. ',
+          'When you finish a round, this site records your ',
+          h('strong',null,'username, IP address, browser user-agent, and score'),
+          ' on the server, to show how an ordinary web game can collect visitor data. Nothing is sold or shared.'
         ),
-        h('button', { className: 'btn', onClick: function() { setStep('ready'); } }, 'I UNDERSTAND — PLAY')
+        h('button', { className:'btn', onClick:function(){ setStep('ready'); } }, 'I UNDERSTAND — PLAY')
       )
     );
   }
 
   // Steps 3-5 – game
-  return h('main', { className: 'stage' },
+  return h('main', { className:'stage' },
     h(HalftoneBackdrop),
-    h('section', { className: 'panel' },
-      h('header', { className: 'hud' },
-        h('h1', { className: 'title' }, 'TYPE', h('span', null, '!'), 'POW', h('span', null, '!')),
-        h('div', { className: 'timer', 'data-low': timeLeft <= 5 ? 'true' : 'false' }, timeLeft + 's')
+    h('section', { className:'panel' },
+      h('header', { className:'hud' },
+        h('h1', { className:'title' }, 'TYPE', h('span',null,'!'), 'POW', h('span',null,'!')),
+        h('div', { className:'timer', 'data-low': timeLeft <= 5 ? 'true' : 'false' }, timeLeft + 's')
       ),
-      h('p', { className: 'who' }, 'PLAYER: ', h('strong', null, username)),
-      h('div', { className: 'character-row' },
-        h(Typist, { mood: mood }),
-        (step === 'playing' || step === 'done') && h('div', { className: 'burst-wrap' + (step === 'done' ? ' burst-wrap--pop' : '') },
-          h(ActionBurst, { word: burstWord, color: result && result.wpm < 40 ? '#ff5e5b' : '#ffd23f' })
+      h('p', { className:'who' }, 'PLAYER: ', h('strong',null,username)),
+      h('div', { className:'character-row' },
+        h(Typist, { mood:mood }),
+        (step==='playing'||step==='done') && h('div', { className:'burst-wrap'+(step==='done'?' burst-wrap--pop':'') },
+          h(ActionBurst, { word:burstWord, color: result&&result.wpm<40 ? '#ff5e5b' : '#ffd23f' })
         )
       ),
 
-      step === 'ready' && h('div', { className: 'center' },
-        h('p', { className: 'prompt-preview' }, prompt),
-        h('button', { className: 'btn', onClick: start }, 'START THE SHOWDOWN')
+      step === 'ready' && h('div', { className:'center' },
+        h('p', { className:'prompt-preview' }, prompt),
+        h('button', { className:'btn', onClick:start }, 'START THE SHOWDOWN')
       ),
 
       step === 'playing' && h(Fragment, null,
-        h('p', { className: 'prompt' },
+        // invisible overlay: tapping anywhere on the panel re-focuses the input
+        h('div', { className:'focus-overlay', onClick:focusInput, 'aria-hidden':'true' }),
+        h('p', { className:'prompt', onClick:focusInput },
           prompt.split('').map(function(ch, i) {
             var cls = 'char';
-            if (i < typed.length) cls += typed[i] === ch ? ' char--ok' : ' char--bad';
+            if (i < typed.length) cls += typed[i]===ch ? ' char--ok' : ' char--bad';
             if (i === typed.length) cls += ' char--cursor';
-            return h('span', { key: i, className: cls }, ch);
+            return h('span', { key:i, className:cls }, ch);
           })
         ),
         h('input', {
-          ref: inputRef,
-          className: 'hidden-input',
-          value: typed,
-          onChange: function(e) { setTyped(e.target.value.slice(0, prompt.length)); },
-          autoComplete: 'off', autoCapitalize: 'off', spellCheck: 'false',
-          'aria-label': 'Type the prompt here'
+          ref:inputRef,
+          className:'hidden-input',
+          value:typed,
+          onChange:function(e){ setTyped(e.target.value.slice(0, prompt.length)); },
+          autoComplete:'off', autoCapitalize:'off', spellCheck:'false',
+          'aria-label':'Type the prompt here'
         }),
-        h('p', { className: 'hint' }, 'Keep typing — the panel is listening.')
+        h('p', { className:'hint' }, 'Tap the text above if keyboard disappears.')
       ),
 
-      step === 'done' && result && h('div', { className: 'center result' },
-        h('div', { className: 'scoreline' },
-          h('span', { className: 'big' }, result.wpm),
-          h('span', { className: 'unit' }, 'WPM')
+      step === 'done' && result && h('div', { className:'center result' },
+        h('div', { className:'scoreline' },
+          h('span', { className:'big' }, result.wpm),
+          h('span', { className:'unit' }, 'WPM')
         ),
-        h('p', { className: 'subscore' }, result.accuracy + '% accuracy · ' + result.duration_s + 's'),
-        h('button', { className: 'btn', onClick: start }, 'RUN IT BACK')
+        h('p', { className:'subscore' }, result.accuracy + '% accuracy · ' + result.duration_s + 's'),
+        h('button', { className:'btn', onClick:start }, 'RUN IT BACK')
       ),
 
-      h('footer', { className: 'foot' }, 'Demo logs username + IP on finish · ethical-use project')
+      h('footer', { className:'foot' }, 'Demo logs username + IP on finish · ethical-use project')
     )
   );
 }
 
-// ── Root ─────────────────────────────────────────────────────────────────
+// ── Root ──────────────────────────────────────────────────────────────────
 function App() {
   var hash = useHashRoute();
   if (hash === '#admin') return h(AdminPanel);
   return h(Game);
 }
 
-var root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(h(App));
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
   </script>
 </body>
 </html>"""
