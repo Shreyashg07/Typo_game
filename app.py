@@ -310,10 +310,33 @@ function AdminPanel() {
 
 // ── Game ──────────────────────────────────────────────────────────────────
 var PROMPTS = [
-  'The quick brown fox jumps over the lazy dog while the city sleeps.',
-  'Heroes are made in the panels between the punches and the silence.',
-  'Type fast type true and let the halftone dots fall where they may.',
-  'Every keystroke is a tiny thunderclap echoing across the page.'
+  'The quick brown fox jumps over the lazy dog while the city sleeps beneath glowing neon lights and distant thunder echoes through the skyline.',
+
+  'Heroes are made in the panels between the punches and the silence where courage quietly speaks louder than fear.',
+
+  'Type fast type true and let the halftone dots fall where they may because every great story begins with a single keystroke.',
+
+  'Every keystroke is a tiny thunderclap echoing across the page as the clock races toward the final second.',
+
+  'A superhero never blames the keyboard for a typo because true legends adapt improvise and keep typing until victory appears.',
+
+  'Coffee powers developers pizza fuels programmers and determination carries every keyboard warrior to the top of the leaderboard.',
+
+  'Some people chase high scores while others chase perfection but the greatest typists somehow manage to do both at the same time.',
+
+  'The city never sleeps and neither does your keyboard when the challenge begins so breathe focus and let your fingers fly.',
+
+  'Every second counts every letter matters and every typo reminds you that greatness is earned one key at a time.',
+
+  'Imagine your keyboard is a piano every sentence is a melody and every accurate word brings you closer to becoming a typing legend.',
+
+  'The mission is simple defeat the timer crush every typo and prove your fingers are faster than anyone expected today.',
+
+  'Even the fastest superheroes started by pressing a single key so believe in yourself stay calm and keep typing until the very end.',
+
+  'Your keyboard has trained its entire life for this exact moment so do not disappoint it with unnecessary backspaces and dramatic pauses.',
+
+  'Victory belongs to those who stay focused under pressure trust their instincts ignore distractions and keep typing with confidence until time runs out.'
 ];
 var DURATION = 30;
 function pickPrompt() { return PROMPTS[Math.floor(Math.random() * PROMPTS.length)]; }
@@ -487,7 +510,7 @@ function Game() {
         h('button', { className:'btn', onClick:start }, 'RUN IT BACK')
       ),
 
-      h('footer', { className:'foot' }, 'Demo logs username + IP on finish · ethical-use project')
+      h('footer', { className:'foot' }, '"Fun fact: Your keyboard secretly judges every typo you make."')
     )
   );
 }
