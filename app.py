@@ -425,10 +425,10 @@ function Game() {
       h('section', { className:'panel panel--consent' },
         h('h1', { className:'title' }, 'HEADS UP', h('span',null,'!')),
         h('p', { className:'consent-copy' },
-          'Hi ', h('strong',null,username), ' — this is a ', h('strong',null,'security demonstration'), '. ',
-          'When you finish a round, this site records your ',
-          h('strong',null,'username, IP address, browser user-agent, and score'),
-          ' on the server, to show how an ordinary web game can collect visitor data. Nothing is sold or shared.'
+          'Hey ', h('strong', null, username), '! 🕸️ ',
+          'With great typing speed comes great responsibility. ',
+          'Only the quickest heroes survive this challenge. ',
+          'Ready to swing your fingers into action?'
         ),
         h('button', { className:'btn', onClick:function(){ setStep('ready'); } }, 'I UNDERSTAND — PLAY')
       )
