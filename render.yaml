@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: type-pow
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: ADMIN_USER
+        value: admin
+      - key: ADMIN_PASS
+        value: H@cker123
+      - key: LOG_FILE
+        value: /tmp/sessions.jsonl
