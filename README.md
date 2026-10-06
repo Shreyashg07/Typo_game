@@ -1,3 +1,9 @@
+
+Check out live url 
+
+https://typo-game-4p3v.onrender.com
+
+
 # TYPE!POW! — Single Flask App
 
 The original project was split into a React/Vite frontend + Flask backend.
