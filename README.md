@@ -31,7 +31,7 @@
 
 **TYPE!POW!** is a comic-book-styled typing speed game (WPM showdown) with a hidden twist: every finished session is logged by the backend, and an admin panel lets you review the collected data.
 
-The project was originally built as a **React/Vite frontend + Flask backend**. This repository contains the **merged version**: one Flask app, zero build steps, deployable to Render in minutes.
+The project was originally built as a **React/Vite frontend + Flask backend**.. This repository contains the **merged version**: one Flask app, zero build steps, deployable to Render in minutes.
 
 ---
 
