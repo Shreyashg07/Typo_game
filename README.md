@@ -8,7 +8,7 @@
 
 <br>
 
-# 💥 [TYPE!POW! — Comic Honeypot Typing Adventure](https://github.com/Shreyashg07/Typo_game)
+# 💥 [TYPE!POW! — Honeypot Typing Adventure](https://github.com/Shreyashg07/Typo_game)
 
 ### A comic-style WPM showdown built as a single Flask app
 
